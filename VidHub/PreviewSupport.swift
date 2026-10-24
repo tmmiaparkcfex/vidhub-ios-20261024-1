@@ -37,6 +37,8 @@ struct PreviewHost: View {
                 PlayerView(target: PlayerTarget(item: DemoData.all[0], lineIndex: 0, episodeIndex: 0))
             case "me":
                 MeView()
+            case "root":
+                RootTabView()
             default:
                 HomeView()
             }

@@ -80,7 +80,7 @@ jobs:
           xcrun simctl status_bar "$DEVICE" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
           xcrun simctl ui "$DEVICE" appearance dark
           mkdir -p screenshots
-          for SCREEN in home browse search detail me player; do
+          for SCREEN in root home browse search detail me player; do
             xcrun simctl launch "$DEVICE" local.vidhub.app.zhang --preview "$SCREEN" || true
             sleep 5
             xcrun simctl io "$DEVICE" screenshot "screenshots/$SCREEN.png"
