@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         appearance.backgroundColor = UIColor(red: 0.043, green: 0.035, blue: 0.063, alpha: 1)
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        UITabBar.appearance().isTranslucent = false
         return true
     }
 }
@@ -70,5 +71,7 @@ struct RootTabView: View {
                 .tag(3)
         }
         .tint(Theme.accent)
+        .toolbarBackground(Theme.bg, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 }
