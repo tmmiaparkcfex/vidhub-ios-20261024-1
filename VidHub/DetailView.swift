@@ -83,7 +83,7 @@ struct DetailView: View {
     private var backdrop: some View {
         ZStack(alignment: .bottom) {
             PosterImage(url: item.posterURL, title: item.name)
-                .frame(height: 320)
+                .frame(height: 250)
                 .blur(radius: 16)
                 .opacity(0.55)
                 .overlay(
@@ -94,7 +94,7 @@ struct DetailView: View {
                     ], startPoint: .top, endPoint: .bottom)
                 )
         }
-        .frame(height: 320)
+        .frame(height: 250)
         .frame(maxWidth: .infinity)
         .clipped()
     }
@@ -231,6 +231,7 @@ struct DetailView: View {
             Text("播放线路")
                 .font(.system(size: 13.5, weight: .bold, design: .rounded))
                 .foregroundColor(Theme.text)
+                .padding(.horizontal, 16)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
@@ -242,7 +243,7 @@ struct DetailView: View {
                                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                                 Text("\(line.episodes.count)")
                                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                                    .foregroundColor(Theme.textFaint)
+                                    .foregroundColor(lineIndex == idx ? Color.black.opacity(0.45) : Theme.textFaint)
                             }
                             .foregroundColor(lineIndex == idx ? .black : Theme.textDim)
                             .padding(.horizontal, 12)
@@ -269,6 +270,7 @@ struct DetailView: View {
                     .foregroundColor(Theme.textFaint)
                 Spacer()
             }
+            .padding(.horizontal, 16)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
                 ForEach(lines[lineIndex].episodes) { ep in

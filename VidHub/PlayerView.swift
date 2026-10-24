@@ -188,9 +188,10 @@ final class PlayerSurfaceView: UIView {
 final class PiPController: ObservableObject {
     weak var surface: PlayerSurfaceView?
     @Published var active = false
+    @Published var available = false
 
-    var supported: Bool {
-        AVPictureInPictureController.isPictureInPictureSupported() && surface?.pip != nil
+    func refresh() {
+        available = AVPictureInPictureController.isPictureInPictureSupported() && surface?.pip != nil
     }
 
     func toggle() {
@@ -213,6 +214,7 @@ struct PlayerLayerView: UIViewRepresentable {
         view.backgroundColor = .black
         view.attach(player)
         pip.surface = view
+        DispatchQueue.main.async { pip.refresh() }
         return view
     }
 
@@ -276,7 +278,7 @@ struct PlayerView: View {
     @AppStorage("vidhub.autoplay") private var autoPlayNext = true
     @AppStorage("vidhub.remember") private var rememberProgress = true
 
-    private enum DragMode { case none, seek, brightness, volume }
+    private enum DragMode: Equatable { case none, seek, brightness, volume }
 
     private let ticker = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
@@ -504,7 +506,7 @@ struct PlayerView: View {
                         }
                     }
 
-                    if pip.supported {
+                    if pip.available {
                         Button { pip.toggle() } label: {
                             Image(systemName: "pip.enter")
                                 .font(.system(size: 13, weight: .semibold))
@@ -540,16 +542,18 @@ struct PlayerView: View {
                 let value = dragSeek ?? engine.time
                 let ratio = min(1, max(0, value / total))
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.22))
+                    Capsule()
+                        .fill(Color.white.opacity(0.22))
+                        .frame(height: 3)
                     Capsule()
                         .fill(Theme.accentGradient)
-                        .frame(width: max(3, geo.size.width * ratio))
+                        .frame(width: max(2, geo.size.width * ratio), height: 3)
                     Circle()
                         .fill(Color.white)
-                        .frame(width: dragSeek == nil ? 9 : 14, height: dragSeek == nil ? 9 : 14)
-                        .offset(x: max(0, geo.size.width * ratio - (dragSeek == nil ? 4.5 : 7)))
+                        .frame(width: dragSeek == nil ? 9 : 15, height: dragSeek == nil ? 9 : 15)
+                        .offset(x: max(0, min(geo.size.width - 9, geo.size.width * ratio - 4.5)))
                 }
-                .frame(height: 22)
+                .frame(width: geo.size.width, height: 20, alignment: .leading)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -564,7 +568,7 @@ struct PlayerView: View {
                         }
                 )
             }
-            .frame(height: 22)
+            .frame(height: 20)
 
             HStack {
                 Text((dragSeek ?? engine.time).timeText)

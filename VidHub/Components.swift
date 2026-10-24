@@ -5,6 +5,7 @@ import SwiftUI
 struct PosterImage: View {
     let url: URL?
     let title: String
+    var showsPlaceholderTitle: Bool = true
 
     var body: some View {
         GeometryReader { geo in
@@ -37,13 +38,15 @@ struct PosterImage: View {
             Image(systemName: "play.rectangle.fill")
                 .font(.system(size: 20))
                 .foregroundColor(.white.opacity(0.22))
-            Text(title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundColor(.white.opacity(0.82))
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .minimumScaleFactor(0.8)
-                .padding(.horizontal, 10)
+            if showsPlaceholderTitle {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.82))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, 10)
+            }
         }
         .padding(6)
     }

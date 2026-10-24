@@ -232,7 +232,7 @@ struct HeroCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterImage(url: item.posterURL, title: item.name)
+            PosterImage(url: item.posterURL, title: item.name, showsPlaceholderTitle: false)
                 .frame(height: 248)
                 .blur(radius: 0.5)
                 .overlay(
