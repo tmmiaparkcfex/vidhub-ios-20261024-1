@@ -1,0 +1,97 @@
+name: Build iPhone IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Verification scope
+        type: choice
+        default: full
+        options: [full, build-only]
+      shots:
+        description: Render simulator screens
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+
+      - name: Build iPhone app without signing
+        run: |
+          set -euo pipefail
+          xcodebuild -project VidHub.xcodeproj -scheme VidHub \
+            -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          mkdir -p package/Payload
+          cp -R build/Build/Products/Release-iphoneos/VidHub.app package/Payload/
+          test -f package/Payload/VidHub.app/VidHub
+          file package/Payload/VidHub.app/VidHub
+          cd package
+          zip -qr VidHub-unsigned.ipa Payload
+          shasum -a 256 VidHub-unsigned.ipa > SHA256.txt
+          cat SHA256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VidHub-iPhone-unsigned
+          path: |
+            package/VidHub-unsigned.ipa
+            package/SHA256.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build for iPhone 13 Pro simulator
+        if: inputs.scope == 'full'
+        run: |
+          set -euo pipefail
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c 'import json,sys; r=[x["identifier"] for x in json.load(sys.stdin)["runtimes"] if x.get("isAvailable") and "iOS" in x["identifier"]]; print(r[-1])')
+          DEVICE=$(xcrun simctl create VidHub-UI-Review com.apple.CoreSimulator.SimDeviceType.iPhone-13-Pro "$RUNTIME")
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project VidHub.xcodeproj -scheme VidHub \
+            -configuration Debug -sdk iphonesimulator -destination "id=$DEVICE" \
+            -derivedDataPath simulator-build CODE_SIGNING_ALLOWED=NO build
+          echo "$DEVICE" > .simulator-id
+
+      - name: Render screens
+        if: inputs.scope == 'full' && inputs.shots
+        run: |
+          set -euo pipefail
+          DEVICE=$(cat .simulator-id)
+          xcrun simctl install "$DEVICE" simulator-build/Build/Products/Debug-iphonesimulator/VidHub.app
+          xcrun simctl status_bar "$DEVICE" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
+          xcrun simctl ui "$DEVICE" appearance dark
+          mkdir -p screenshots
+          for SCREEN in home browse search detail me player; do
+            xcrun simctl launch "$DEVICE" local.vidhub.app.zhang --preview "$SCREEN" || true
+            sleep 5
+            xcrun simctl io "$DEVICE" screenshot "screenshots/$SCREEN.png"
+            xcrun simctl terminate "$DEVICE" local.vidhub.app.zhang || true
+          done
+          ls -l screenshots
+
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.scope == 'full' && inputs.shots
+        with:
+          name: VidHub-screenshots
+          path: screenshots/*
+          if-no-files-found: warn
+          retention-days: 14

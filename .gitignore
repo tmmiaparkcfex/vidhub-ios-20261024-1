@@ -1,0 +1,7 @@
+build/
+simulator-build/
+package/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.DS_Store
